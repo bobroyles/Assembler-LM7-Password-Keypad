@@ -1,0 +1,40 @@
+{
+	// See https://go.microsoft.com/fwlink/?LinkId=733558
+	// for the documentation about the tasks.json format
+
+    //This is an example tasks.json for assembler
+    // Only tested on Scott's office computer! You may need to do some working to get it the way you like.
+    // This is assuming avrdude and gavrasm are both in C:/ASM_Tools
+    // This is also assuming that your Arduino is connected to your COM4 port (which it might not be).
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Assembler (Create .hex file)",
+			"type": "shell",
+			"command": "C:/ASM_Tools/gavrasm.exe",
+			"args": [ 
+				"-b","-e",
+				"\"${workspaceFolder}\"/source/*.asm" ],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+				}
+		},
+		{
+			"label": "Program HEX Code to Metro board",
+			"type": "shell",
+			//"command": "C:/Program Files/avrdude-v7.0-windows-windows-x64/avrdude.exe",
+			"command": "C:/ASM_Tools/avrdude.exe",
+			"args": [ 
+				"-c", "arduino",
+				"-p", "atmega328p",
+				"-P", "COM4",
+				"-U", "./source/*.hex" ],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+				}
+		},
+
+	]
+}
