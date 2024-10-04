@@ -1,0 +1,214 @@
+gavrasm Gerd's AVR assembler version 5.4 (C)2022 by DG4FAC
+----------------------------------------------------------
+Source file: C:\Users\broyl\OneDrive\Documents\Fall 2022\Comp & Assembler\LM7_Password_Keypad/source/main.asm
+Hex file:    C:\Users\broyl\OneDrive\Documents\Fall 2022\Comp & Assembler\LM7_Password_Keypad/source/main.hex
+Eeprom file: C:\Users\broyl\OneDrive\Documents\Fall 2022\Comp & Assembler\LM7_Password_Keypad/source/main.eep
+Compiled:    12.12.2022, 22:47:06
+Pass:        2
+     1: ;
+     2: ; LM7
+     3: ;
+     4: ; Created: 11/12/2022
+     5: ; Author : Bo Broyles
+     6: ;
+     7: ; compile with:
+     8: ; gavrasm.exe -b main.asm
+     9: ; 
+    10: ; upload with:
+    11: ; avrdude -c arduino -p atmega328p -P COM4 -U main.hex
+    12: 
+    13: .DEVICE ATmega328p
+    14: 
+    15: ;Storing the Password in SRAM, Password is 1010 ;;
+    16: 000000   E1C0  ldi r28, $10
+    17: 000001   93C0  sts $8000, r28
+        000002   8000
+    18: 000003   E2C0  ldi r28, $20
+    19: 000004   93C0  sts $8001, r28
+        000005   8001
+    20: 000006   E2C0  ldi r28, $20
+    21: 000007   93C0  sts $8002, r28
+        000008   8002
+    22: 000009   E1C0  ldi r28, $10 
+    23: 00000A   93C0  sts $8003, r28
+        00000B   8003
+    24: 00000C   27CC  clr r28
+    25: ;Values representing a press of the left and right buttons
+    26: 00000D   E140  ldi r20, $10 ; left button pressed, add $10
+    27: 00000E   E250  ldi r21, $20 ; right button pressed, add $20
+    28: ;Values to check that the password order is correct
+    29: 00000F   E060  ldi r22, $00 ; left button pressed flag
+    30: 000010   E080  ldi r24, $00 ; right button pressed flag
+    31:     
+    32:     ;lds r26, $8000 ; need the first password value 
+    33: ;Setting up data direction for PORTD for the LEDs
+    34: 000011   EF08  ldi r16, $f8
+    35: 000012   B90A  out DDRD, r16
+    36: 000013   2700  clr r16
+    37: 000014   B90B  out PORTD, r16
+    38: ;Setting up pins in portB for the buttons
+    39: 000015   EF00  ldi r16, $f0 
+    40: 000016   B904  out DDRB, r16
+    41: 000017   2700  clr r16 ; making sure r16 is empty to output to PORTD
+    42: 000018   2711  clr r17 ; making sure r17 is empty for when i take in button pressing information
+    43: 
+    44: 000019   E070  ldi r23, $00 ; clearing count
+    45:   
+    46: mainloop:
+    47: 
+    48: 00001A   B113  in r17, PINB
+    49:   
+    50: 00001B   3011  cpi r17, $01 ; checking to see if the left button was pressed
+    51: 00001C   F021  breq lbuttonflag
+    52: 
+    53: 00001D   3012  cpi r17, $02 ; checking to see if the right button was pressed
+    54: 00001E   F041  breq rbuttonflag
+    55: 
+    56: 00001F   940C  jmp mainloop ; keep looping until a button has been pressed
+        000020   001A
+    57: 
+    58: lbuttonflag:
+    59: 000021   B123  in r18, PINB ; checking to see if the button has been up pressed to jump to leftbuttonpressed, loop until button is unpressed
+    60: 000022   FF20  SBRS r18, 0
+    61: 000023   940C  jmp Leftbuttonpressed
+        000024   002D
+    62: 000025   940C  jmp lbuttonflag
+        000026   0021
+    63: 
+    64: rbuttonflag:
+    65: 000027   B123  in r18, PINB ; checking to see if right button has been released to jump to rightbuttonpressed, loop until button is unpressed
+    66: 000028   FF21  SBRS r18, 1
+    67: 000029   940C  jmp Rightbuttonpressed
+        00002A   0032
+    68: 00002B   940C  jmp rbuttonflag
+        00002C   0027
+    69: 
+    70: Leftbuttonpressed:
+    71: 
+    72: 00002D   0F04  ADD r16, r20
+    73: 00002E   B90B  out PORTD, r16
+    74: 00002F   9563  inc r22
+    75: 000030   940C  jmp CheckPassword
+        000031   003D
+    76:     ;;need to add something here to check if the password is correct
+    77:     ;jmp mainloop
+    78: 
+    79: Rightbuttonpressed:
+    80:      
+    81: 000032   0F05  ADD r16, r21 ; Right button is pressed so adding $20 to value outputted to PORTD
+    82: 000033   B90B  out PORTD, r16
+    83: 000034   9583  inc r24 ; setting the right button pressed flag
+    84: 000035   940C  jmp CheckPassword
+        000036   003D
+    85:    
+    86: GoodPassword:
+    87: 000037   EF08  ldi r16, $f8 ; if the password was correct then green LED needs to display
+    88: 000038   B90B  out PORTD, r16
+    89: 000039   2777  clr r23
+    90: 
+    91: 00003A   940C  jmp mainloop
+        00003B   001A
+    92: 00003C   0000  nop;
+    93: CheckPassword:
+    94:     
+    95: 00003D   9573  inc r23;
+    96:     
+    97: 00003E   3071  cpi r23, $01
+    98: 00003F   F041  breq Check_one
+    99: 000040   3072  cpi r23, $02
+   100: 000041   F091  breq Check_two
+   101: 000042   3073  cpi r23, $03
+   102: 000043   F0E1  breq Check_three
+   103: 000044   3074  cpi r23, $04
+   104: 000045   F131  breq Check_four
+   105: 
+   106: 000046   3075  cpi r23, $05
+   107: 000047   F181  breq BadPassword
+   108: 
+   109: 
+   110: Check_one:
+   111: 000048   91A0  lds r26, $8000
+        000049   8000
+   112: 
+   113: 00004A   FD60  sbrc r22, 0
+   114: 00004B   174A  cp r20, r26
+   115: 00004C   F559  brne BadPassword
+   116: 
+   117: 00004D   FD80  sbrc r24, 0
+   118: 00004E   175A  cp r21, r26
+   119: 00004F   F541  brne BadPassword
+   120: 
+   121: 000050   3074  cpi r23, $04
+   122: 000051   F329  breq GoodPassword
+   123: 
+   124: 000052   940C  jmp mainloop
+        000053   001A
+   125: 
+   126: Check_two:
+   127: 000054   91A0  lds r26, $8001
+        000055   8001
+   128: 
+   129: 000056   FD60  sbrc r22, 0
+   130: 000057   174A  cp r20, r26
+   131: 000058   F4F9  brne BadPassword
+   132: 
+   133: 000059   FD80  sbrc r24, 0
+   134: 00005A   175A  cp r21, r26
+   135: 00005B   F4E1  brne BadPassword
+   136: 
+   137: 00005C   3074  cpi r23, $04
+   138: 00005D   F2C9  breq GoodPassword
+   139: 
+   140: 00005E   940C  jmp mainloop
+        00005F   001A
+   141: Check_three:
+   142: 000060   91A0  lds r26, $8002
+        000061   8002
+   143: 
+   144: 000062   FD60  sbrc r22, 0
+   145: 000063   174A  cp r20, r26
+   146: 000064   F499  brne BadPassword
+   147: 
+   148: 000065   FD80  sbrc r24, 0
+   149: 000066   175A  cp r21, r26
+   150: 000067   F481  brne BadPassword
+   151: 
+   152: 000068   3074  cpi r23, $04
+   153: 000069   F269  breq GoodPassword
+   154: 
+   155: 00006A   940C  jmp mainloop
+        00006B   001A
+   156: Check_four:
+   157: 00006C   91A0  lds r26, $8003
+        00006D   8003
+   158: 
+   159: 00006E   FD60  sbrc r22, 0
+   160: 00006F   174A  cp r20, r26
+   161: 000070   F439  brne BadPassword
+   162: 
+   163: 000071   FD80  sbrc r24, 0
+   164: 000072   175A  cp r21, r26
+   165: 000073   F421  brne BadPassword
+   166: 
+   167: 000074   3074  cpi r23, $04
+   168: 000075   F209  breq GoodPassword
+   169: 
+   170: 000076   940C  jmp mainloop
+        000077   001A
+   171:     
+   172: BadPassword:
+   173: 000078   2700  clr r16
+   174: 000079   B90B  out PORTD, r16
+   175: 00007A   2777  clr r23
+   176: 
+   177: 00007B   940C  jmp mainloop
+        00007C   001A
+   178: 00007D   0000  nop;
+
+Program             :      126 words.
+Constants           :        0 words.
+Total program memory:      126 words.
+Eeprom space        :        0 bytes.
+Data segment        :        0 bytes.
+Compilation completed, no errors.
+Compilation ended 12.12.2022, 22:47:06
